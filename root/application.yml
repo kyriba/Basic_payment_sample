@@ -1,0 +1,14 @@
+client:
+  id: YOUR_CLIENT_ID
+  secret: YOUR_CLIENT_SECRET
+
+access:
+  token:
+    url: https://demo.kyriba.com/gateway/oauth/token
+
+base:
+  url: https://demo.kyriba.com/gateway/api
+
+templateRef:
+  import: DEMO_PY_POC
+  export: TSC_EXP_PY
