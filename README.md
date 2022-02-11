@@ -37,5 +37,5 @@ Enter command you want to execute. To stop the application enter "exit". To lear
 Alternatively, the application can be launched by running jar file:
 
 ```git
-java -jar root/build/libs/tesco-api-poc.jar
+java -jar root/build/libs/Basic_payment_sample.jar --spring.config.location=root/application.yml
 ```

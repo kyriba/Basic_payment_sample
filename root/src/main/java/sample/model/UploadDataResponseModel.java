@@ -1,4 +1,4 @@
-package io.swagger.client.model;
+package sample.model;
 
 import com.google.gson.annotations.SerializedName;
 
@@ -40,9 +40,9 @@ public class UploadDataResponseModel {
     @Override
     public String toString() {
         return "{\n" +
-                "   fileId='" + fileId + '\'' +
-                ",\n   fileName='" + fileName + '\'' +
-                ",\n   hashSum='" + hashSum + '\'' +
+                "   fileId: \"" + fileId + '\"' +
+                ",\n   fileName: \"" + fileName + '\"' +
+                ",\n   hashSum: \"" + hashSum + '\"' +
                 "\n}";
     }
 }

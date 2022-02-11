@@ -1,4 +1,4 @@
-package io.swagger.client.model;
+package sample.model;
 
 import com.google.gson.annotations.SerializedName;
 
@@ -29,8 +29,8 @@ public class RunTaskResponseModel {
     @Override
     public String toString() {
         return "{\n" +
-                "   fileId='" + fileId + '\'' +
-                ",\n   taskId='" + taskId + '\'' +
+                "   fileId: \"" + fileId + '\"' +
+                ",\n   taskId: \"" + taskId + '\"' +
                 "\n}";
     }
 }
