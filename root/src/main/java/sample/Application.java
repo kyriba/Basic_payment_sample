@@ -9,8 +9,11 @@ import sample.model.RunTaskResponseModel;
 import sample.model.UploadDataResponseModel;
 
 import java.io.IOException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Base64;
-import java.util.Scanner;
+import java.util.Date;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -32,8 +35,9 @@ public class Application {
     private String EXPORT_TEMPLATE_REFERENCE;
 
     private final JSON json = new JSON();
+    private RunTaskResponseModel runTaskResponseModelImport;
 
-    private void refreshToken() throws IOException {
+    public void refreshToken() throws IOException {
 
         OkHttpClient client = new OkHttpClient();
         MediaType mediaType = MediaType.parse("application/x-www-form-urlencoded");
@@ -50,7 +54,13 @@ public class Application {
                     json.deserialize(response.body().string(), GetTokenResponseModel.class);
             accessToken = getTokenResponseModel.getAccessToken();
         } else {
-            System.out.println("Cannot get access token. Please, check your credentials and access token url.\n");
+            System.out.println("Cannot get access token. Please, check your credentials and access token url.");
+            try {
+                TimeUnit.SECONDS.sleep(3);
+            } catch (InterruptedException e) {
+                System.out.println(e.getMessage());
+            }
+            System.exit(1);
         }
     }
 
@@ -59,11 +69,41 @@ public class Application {
         return Base64.getEncoder().encodeToString(auth.getBytes());
     }
 
-    private UploadDataResponseModel uploadNewData(String sendPaymentCommand) throws IOException {
-        String requestBody = sendPaymentCommand
-                .substring(0, sendPaymentCommand.length() - 1)
-                .replace("sendPayment(", "")
-                .trim();
+    public void sendPayment(List<String> paymentIDs, List<Date> paymentDueDates, List<Double> paymentAmounts,
+                             List<Long> paymentBANs, List<Long> disbursementBankAccountNumbers,
+                             List<String> paymentDescriptions, List<String> payeeNames, List<String> paymentMethods,
+                             List<String> paymentTypes, List<String> currencyCodes) throws IOException {
+        DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
+        StringBuilder payload = new StringBuilder();
+        for (int i = 0; i < paymentIDs.size(); i++) {
+            payload
+                    .append(paymentIDs.get(i)).append(',')
+                    .append(dateFormat.format(paymentDueDates.get(i))).append(',')
+                    .append(paymentAmounts.get(i)).append(',')
+                    .append(paymentBANs.get(i)).append(',')
+                    .append(disbursementBankAccountNumbers.get(i)).append(',')
+                    .append(paymentDescriptions.get(i)).append(',')
+                    .append(payeeNames.get(i)).append(',')
+                    .append(paymentMethods.get(i)).append(',')
+                    .append(paymentTypes.get(i)).append(',')
+                    .append(currencyCodes.get(i));
+            if (i != paymentIDs.size() - 1) {
+                payload.append(System.lineSeparator());
+            }
+        }
+        UploadDataResponseModel uploadData = uploadNewData(String.valueOf(payload));
+        if (uploadData != null) {
+            System.out.println(System.lineSeparator() + "New data was successfully uploaded:" +
+                    System.lineSeparator() + uploadData);
+            runTaskResponseModelImport = createTaskToRunSpecificProcessTemplate(uploadData.getFileId());
+            System.out.println(runTaskResponseModelImport);
+        } else {
+            System.out.println(System.lineSeparator() + "New data wasn't uploaded." + System.lineSeparator());
+        }
+
+    }
+
+    private UploadDataResponseModel uploadNewData(String requestBody) throws IOException {
         OkHttpClient client = new OkHttpClient();
         MediaType mediaType = MediaType.parse("text/plain;charset=utf-8");
         RequestBody body = RequestBody.create(mediaType, requestBody);
@@ -77,7 +117,7 @@ public class Application {
         if (response != null) {
             if (response.code() == 401) {
                 refreshToken();
-                return uploadNewData(sendPaymentCommand);
+                return uploadNewData(requestBody);
             } else {
                 return json.deserialize(response.body().string(), UploadDataResponseModel.class);
             }
@@ -115,7 +155,19 @@ public class Application {
         }
     }
 
-    private GetStatusResponseModel getTaskStatus(String taskUuid) throws IOException {
+    public void getStatus() throws IOException {
+        try {
+            TimeUnit.SECONDS.sleep(1);
+        } catch (InterruptedException e) {
+            System.out.println(e.getMessage());
+        }
+        String taskUuid;
+        if (runTaskResponseModelImport != null) {
+            taskUuid = runTaskResponseModelImport.getTaskId();
+        } else {
+            System.out.println("Cannot get status of the unidentified task");
+            return;
+        }
         OkHttpClient client = new OkHttpClient();
         Request request = new Request.Builder()
                 .url(BASE_URL + "/v1/process-templates/" + taskUuid + "/status")
@@ -126,16 +178,31 @@ public class Application {
         if (response != null) {
             if (response.code() == 401) {
                 refreshToken();
-                return getTaskStatus(taskUuid);
+                getStatus();
             } else {
-                return json.deserialize(response.body().string(), GetStatusResponseModel.class);
+                GetStatusResponseModel getStatusResponseModel =
+                        json.deserialize(response.body().string(), GetStatusResponseModel.class);
+                System.out.println(System.lineSeparator() + getStatusResponseModel);
             }
         } else {
-            return null;
+            System.out.println("Request was not successful");
         }
     }
 
-    private String getPayments(String taskId) throws IOException {
+    public void getPayments() throws IOException {
+        RunTaskResponseModel runTaskResponseModelExport = createTaskToRunSpecificProcessTemplate(null);
+        try {
+            TimeUnit.SECONDS.sleep(1);
+        } catch (InterruptedException e) {
+            System.out.println(e.getMessage());
+        }
+        String taskId;
+        if (runTaskResponseModelExport != null) {
+            taskId = runTaskResponseModelExport.getTaskId();
+        } else {
+            System.out.println("Cannot get payments of the unidentified template");
+            return;
+        }
         String url = "/v1/process-templates/" + EXPORT_TEMPLATE_REFERENCE + "/files?taskId=" + taskId;
         OkHttpClient client = new OkHttpClient();
         Request request = new Request.Builder()
@@ -147,64 +214,12 @@ public class Application {
         if (response != null) {
             if (response.code() == 401) {
                 refreshToken();
-                return getPayments(taskId);
+                getPayments();
             } else {
-                return response.body().string();
+                System.out.println(System.lineSeparator() + response.body().string());
             }
         } else {
-            return null;
+            System.out.println("Request was not successful");
         }
-    }
-
-    public void runApplication() throws IOException {
-        refreshToken();
-        Scanner sc = new Scanner(System.in);
-        UploadDataResponseModel uploadData;
-        RunTaskResponseModel runTaskResponseModelImport = null;
-        RunTaskResponseModel runTaskResponseModelExport;
-        String input;
-        do {
-            System.out.println("\nEnter command you want to execute. To stop the application enter \"exit\". To learn about available functions enter \"-help\".");
-            input = sc.nextLine();
-            input = input.trim();
-            if (input.equals("-help")) {
-                System.out.println(" - sendPayment(paymentId,paymentDueDate,paymentAmount,paymentBAN,disbursementBankAccount,paymentDescription,payeeName,paymentMethod,paymentType,currencyCode) => Function that includes parameters to integrate payment");
-                System.out.println(" - getStatus => See the status of the last sendPayment");
-                System.out.println(" - getPayments => Get a list of payments\n");
-            } else if (input.equals("exit")) {
-                System.exit(1);
-            } else if (input.contains("sendPayment(")) {
-                uploadData = uploadNewData(input);
-                if (uploadData != null) {
-                    System.out.println("New data was successfully uploaded:\n" + uploadData);
-                    runTaskResponseModelImport = createTaskToRunSpecificProcessTemplate(uploadData.getFileId());
-                    System.out.println("\n" + runTaskResponseModelImport);
-                } else {
-                    System.out.println("New data wasn't uploaded.\n");
-                }
-            } else if (input.equals("getStatus")) {
-                if (runTaskResponseModelImport != null) {
-                    GetStatusResponseModel statusResult = getTaskStatus(runTaskResponseModelImport.getTaskId());
-                    System.out.println(statusResult);
-                } else {
-                    System.out.println("Cannot get status of the unidentified task");
-                }
-            } else if (input.equals("getPayments")) {
-                runTaskResponseModelExport = createTaskToRunSpecificProcessTemplate(null);
-                try {
-                    TimeUnit.SECONDS.sleep(1);
-                } catch (InterruptedException e) {
-                    System.out.println(e.getMessage());
-                }
-                if (runTaskResponseModelExport != null) {
-                    String payments = getPayments(runTaskResponseModelExport.getTaskId());
-                    System.out.println(payments);
-                } else {
-                    System.out.println("Cannot get payments of the unidentified template");
-                }
-            } else {
-                System.out.println("There is no such command. For more information on a specific command, type \"-help\"");
-            }
-        } while (true);
     }
 }

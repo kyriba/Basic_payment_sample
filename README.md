@@ -28,14 +28,12 @@ git clone https://github.com/kyriba/Basic_payment_sample.git
 Then, build the project by running **gradle_clean_build.bat** file for Windows or  **gradle_clean_build.bat** file for
 Unix-like operating systems.
 
-After that, run **Runner.exe** file to start the application. After few seconds, the following prompt will appear, signilizing that the application is ready to be used:
-
-```git
-Enter command you want to execute. To stop the application enter "exit". To learn about available functions enter "-help".
-```
+After that, run **Runner.exe** file to start the application.
 
 Alternatively, the application can be launched by running jar file:
 
 ```git
 java -jar root/build/libs/Basic_payment_sample.jar --spring.config.location=root/application.yml
 ```
+
+To terminate application press **Ctrl + C** and execute **Y**.
