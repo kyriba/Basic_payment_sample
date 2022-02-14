@@ -3,10 +3,13 @@ package sample;
 import com.squareup.okhttp.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import sample.model.GetStatusResponseModel;
-import sample.model.GetTokenResponseModel;
-import sample.model.RunTaskResponseModel;
-import sample.model.UploadDataResponseModel;
+import sample.model.Payment;
+import sample.model.PaymentStatus;
+import sample.model.TaskStatus;
+import sample.model.response.GetStatusResponseModel;
+import sample.model.response.GetTokenResponseModel;
+import sample.model.response.RunTaskResponseModel;
+import sample.model.response.UploadDataResponseModel;
 
 import java.io.IOException;
 import java.text.DateFormat;
@@ -69,38 +72,115 @@ public class Application {
         return Base64.getEncoder().encodeToString(auth.getBytes());
     }
 
-    public void sendPayment(List<String> paymentIDs, List<Date> paymentDueDates, List<Double> paymentAmounts,
-                             List<Long> paymentBANs, List<Long> disbursementBankAccountNumbers,
-                             List<String> paymentDescriptions, List<String> payeeNames, List<String> paymentMethods,
-                             List<String> paymentTypes, List<String> currencyCodes) throws IOException {
+    public TaskStatus singlePayment(String paymentID, Date paymentDueDate, Double paymentAmount, Long paymentBAN,
+                                    Long disbursementBankAccountNumber, String paymentDescription, String payeeName,
+                                    String paymentMethod, String paymentType, String currencyCode) throws IOException {
         DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
-        StringBuilder payload = new StringBuilder();
-        for (int i = 0; i < paymentIDs.size(); i++) {
-            payload
-                    .append(paymentIDs.get(i)).append(',')
-                    .append(dateFormat.format(paymentDueDates.get(i))).append(',')
-                    .append(paymentAmounts.get(i)).append(',')
-                    .append(paymentBANs.get(i)).append(',')
-                    .append(disbursementBankAccountNumbers.get(i)).append(',')
-                    .append(paymentDescriptions.get(i)).append(',')
-                    .append(payeeNames.get(i)).append(',')
-                    .append(paymentMethods.get(i)).append(',')
-                    .append(paymentTypes.get(i)).append(',')
-                    .append(currencyCodes.get(i));
-            if (i != paymentIDs.size() - 1) {
-                payload.append(System.lineSeparator());
-            }
-        }
-        UploadDataResponseModel uploadData = uploadNewData(String.valueOf(payload));
+        String payload = paymentID + ',' +
+                dateFormat.format(paymentDueDate) + ',' +
+                paymentAmount + ',' +
+                paymentBAN + ',' +
+                disbursementBankAccountNumber + ',' +
+                paymentDescription + ',' +
+                payeeName + ',' +
+                paymentMethod + ',' +
+                paymentType + ',' +
+                currencyCode;
+
+        UploadDataResponseModel uploadData = uploadNewData(payload);
         if (uploadData != null) {
-            System.out.println(System.lineSeparator() + "New data was successfully uploaded:" +
-                    System.lineSeparator() + uploadData);
             runTaskResponseModelImport = createTaskToRunSpecificProcessTemplate(uploadData.getFileId());
-            System.out.println(runTaskResponseModelImport);
         } else {
             System.out.println(System.lineSeparator() + "New data wasn't uploaded." + System.lineSeparator());
+            return new TaskStatus();
         }
 
+        if (runTaskResponseModelImport != null) {
+            TaskStatus taskStatus = new TaskStatus();
+            taskStatus.setTaskId(runTaskResponseModelImport.getTaskId());
+            taskStatus.setFileId(runTaskResponseModelImport.getFileId());
+            GetStatusResponseModel getStatusResponseModel = getStatus(runTaskResponseModelImport.getTaskId());
+            if (getStatusResponseModel != null) {
+                taskStatus.setStatus(getStatusResponseModel.getStatus());
+            }
+            return taskStatus;
+        } else {
+            System.out.println(System.lineSeparator() + "New task wasn't created." + System.lineSeparator());
+            return new TaskStatus();
+        }
+    }
+
+    public TaskStatus singlePayment(Payment payment) throws IOException {
+        if (payment != null) {
+            String paymentID = payment.getPaymentID();
+            Date paymentDueDate = payment.getPaymentDueDate();
+            Double paymentAmount = payment.getPaymentAmount();
+            Long paymentBAN = payment.getPaymentBAN();
+            Long disbursementBankAccountNumber = payment.getDisbursementBankAccountNumber();
+            String paymentDescription = payment.getPaymentDescription();
+            String payeeName = payment.getPayeeName();
+            String paymentMethod = payment.getPaymentMethod();
+            String paymentType = payment.getPaymentType();
+            String currencyCode = payment.getCurrencyCode();
+            return singlePayment(paymentID, paymentDueDate, paymentAmount, paymentBAN, disbursementBankAccountNumber,
+                    paymentDescription, payeeName, paymentMethod, paymentType, currencyCode);
+        }
+        System.out.println(System.lineSeparator() + "Cannot upload the payment with no data." + System.lineSeparator());
+        return new TaskStatus();
+    }
+
+    public TaskStatus bulkPayment(List<Payment> payments) throws IOException {
+        if (payments == null || payments.isEmpty()) {
+            System.out.println(System.lineSeparator() + "Cannot upload the payment with no data." + System.lineSeparator());
+            return new TaskStatus();
+        }
+        DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
+        StringBuilder payload = new StringBuilder();
+        for (int i = 0; i < payments.size(); i++) {
+            Payment payment = payments.get(i);
+            if (payment != null) {
+                payload
+                        .append(payment.getPaymentID()).append(',')
+                        .append(dateFormat.format(payment.getPaymentDueDate())).append(',')
+                        .append(payment.getPaymentAmount()).append(',')
+                        .append(payment.getPaymentBAN()).append(',')
+                        .append(payment.getDisbursementBankAccountNumber()).append(',')
+                        .append(payment.getPaymentDescription()).append(',')
+                        .append(payment.getPayeeName()).append(',')
+                        .append(payment.getPaymentMethod()).append(',')
+                        .append(payment.getPaymentType()).append(',')
+                        .append(payment.getCurrencyCode());
+                if (i != payments.size() - 1) {
+                    payload.append(System.lineSeparator());
+                }
+            }
+        }
+
+        UploadDataResponseModel uploadData = uploadNewData(String.valueOf(payload));
+        if (uploadData != null) {
+            runTaskResponseModelImport = createTaskToRunSpecificProcessTemplate(uploadData.getFileId());
+        } else {
+            System.out.println(System.lineSeparator() + "New data wasn't uploaded." + System.lineSeparator());
+            return new TaskStatus();
+        }
+
+        if (runTaskResponseModelImport != null) {
+            TaskStatus taskStatus = new TaskStatus();
+            taskStatus.setTaskId(runTaskResponseModelImport.getTaskId());
+            taskStatus.setFileId(runTaskResponseModelImport.getFileId());
+            GetStatusResponseModel getStatusResponseModel = getStatus(runTaskResponseModelImport.getTaskId());
+            if (getStatusResponseModel != null) {
+                taskStatus.setStatus(getStatusResponseModel.getStatus());
+            }
+            return taskStatus;
+        } else {
+            System.out.println(System.lineSeparator() + "New task wasn't created." + System.lineSeparator());
+            return new TaskStatus();
+        }
+    }
+
+    public List<PaymentStatus> getPaymentStatus() {
+        return null;
     }
 
     private UploadDataResponseModel uploadNewData(String requestBody) throws IOException {
@@ -155,18 +235,15 @@ public class Application {
         }
     }
 
-    public void getStatus() throws IOException {
+    private GetStatusResponseModel getStatus(String taskUuid) throws IOException {
         try {
             TimeUnit.SECONDS.sleep(1);
         } catch (InterruptedException e) {
             System.out.println(e.getMessage());
         }
-        String taskUuid;
-        if (runTaskResponseModelImport != null) {
-            taskUuid = runTaskResponseModelImport.getTaskId();
-        } else {
+        if (taskUuid == null) {
             System.out.println("Cannot get status of the unidentified task");
-            return;
+            return null;
         }
         OkHttpClient client = new OkHttpClient();
         Request request = new Request.Builder()
@@ -178,15 +255,15 @@ public class Application {
         if (response != null) {
             if (response.code() == 401) {
                 refreshToken();
-                getStatus();
+                getStatus(taskUuid);
             } else {
-                GetStatusResponseModel getStatusResponseModel =
-                        json.deserialize(response.body().string(), GetStatusResponseModel.class);
-                System.out.println(System.lineSeparator() + getStatusResponseModel);
+                return json.deserialize(response.body().string(), GetStatusResponseModel.class);
             }
         } else {
             System.out.println("Request was not successful");
+            return null;
         }
+        return null;
     }
 
     public void getPayments() throws IOException {

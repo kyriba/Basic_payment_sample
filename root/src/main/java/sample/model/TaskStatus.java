@@ -1,14 +1,27 @@
 package sample.model;
 
-import com.google.gson.annotations.SerializedName;
+public class TaskStatus {
 
-public class RunTaskResponseModel {
-
-    @SerializedName("fileId")
+    private String status;
     private String fileId;
-
-    @SerializedName("taskId")
     private String taskId;
+
+    public TaskStatus() {
+    }
+
+    public TaskStatus(String status, String fileId, String taskId) {
+        this.status = status;
+        this.fileId = fileId;
+        this.taskId = taskId;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
 
     public String getFileId() {
         return fileId;
@@ -29,7 +42,8 @@ public class RunTaskResponseModel {
     @Override
     public String toString() {
         return "{\n" +
-                "   fileId: \"" + fileId + '\"' +
+                "   status: \"" + status + '\"' +
+                ",\n   fileId: \"" + fileId + '\"' +
                 ",\n   taskId: \"" + taskId + '\"' +
                 "\n}";
     }

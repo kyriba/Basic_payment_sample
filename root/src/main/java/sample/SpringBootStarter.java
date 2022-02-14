@@ -3,6 +3,7 @@ package sample;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ConfigurableApplicationContext;
+import sample.model.Payment;
 
 import java.io.IOException;
 import java.util.*;
@@ -10,17 +11,27 @@ import java.util.*;
 @SpringBootApplication
 public class SpringBootStarter {
 
-    private static final List<String> paymentIDs = Arrays.asList("CHJ788");
-    private static final List<Date> paymentDueDates = Arrays.asList(
-            new GregorianCalendar(2022, Calendar.FEBRUARY, 23).getTime());
-    private static final List<Double> paymentAmounts = Arrays.asList(345000.00D);
-    private static final List<Long> paymentBANs = Arrays.asList(734567898733L);
-    private static final List<Long> disbursementBankAccountNumbers = Arrays.asList(456787671234L);
-    private static final List<String> paymentDescriptions = Arrays.asList("ABC Food Pvt Ltd Payout");
-    private static final List<String> payeeNames = Arrays.asList("ABC Food Pvt Ltd");
-    private static final List<String> paymentMethods = Arrays.asList("Domestic");
-    private static final List<String> paymentTypes = Arrays.asList("SEPA");
-    private static final List<String> currencyCodes = Arrays.asList("GBP");
+    private static final String paymentID = "CHJ788";
+    private static final Date paymentDueDate =
+            new GregorianCalendar(2022, Calendar.FEBRUARY, 23).getTime();
+    private static final Double paymentAmount = 345000.00D;
+    private static final Long paymentBAN = 734567898733L;
+    private static final Long disbursementBankAccountNumber = 456787671234L;
+    private static final String paymentDescription = "ABC Food Pvt Ltd Payout";
+    private static final String payeeName = "ABC Food Pvt Ltd";
+    private static final String paymentMethod = "Domestic";
+    private static final String paymentType = "SEPA";
+    private static final String currencyCode = "GBP";
+    private static final Payment payment = new Payment(paymentID, paymentDueDate, paymentAmount, paymentBAN,
+            disbursementBankAccountNumber, paymentDescription, payeeName, paymentMethod, paymentType,
+            currencyCode);
+    private static final Payment payment2 = new Payment(paymentID, paymentDueDate, 300000.00D, paymentBAN,
+            disbursementBankAccountNumber, paymentDescription, payeeName, paymentMethod, paymentType,
+            currencyCode);
+    private static final Payment payment3 = new Payment(paymentID, paymentDueDate, 102000.00D, paymentBAN,
+            disbursementBankAccountNumber, paymentDescription, payeeName, paymentMethod, paymentType,
+            currencyCode);
+
 
     public static void main(String[] args) {
         ConfigurableApplicationContext context = SpringApplication.run(SpringBootStarter.class, args);
@@ -28,9 +39,11 @@ public class SpringBootStarter {
         Application app = context.getBean(Application.class);
         try {
             app.refreshToken();
-            app.sendPayment(paymentIDs, paymentDueDates, paymentAmounts, paymentBANs, disbursementBankAccountNumbers,
-                    paymentDescriptions, payeeNames, paymentMethods, paymentTypes, currencyCodes);
-            app.getStatus();
+            System.out.println(app.singlePayment(paymentID, paymentDueDate, paymentAmount, paymentBAN,
+                    disbursementBankAccountNumber, paymentDescription, payeeName, paymentMethod, paymentType,
+                    currencyCode));
+            System.out.println(app.singlePayment(payment));
+            System.out.println(app.bulkPayment(Arrays.asList(payment, payment2, payment3)));
             app.getPayments();
         } catch (IOException e) {
             e.printStackTrace();
