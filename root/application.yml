@@ -10,5 +10,5 @@ base:
   url: https://demo.kyriba.com/gateway/api
 
 templateRef:
-  import: DEMO_PY_POC
-  export: TSC_EXP_PY
+  import: DEMO_PY_IMP
+  export: DEMO_PY_EXP
