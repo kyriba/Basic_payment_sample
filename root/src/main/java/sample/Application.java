@@ -13,11 +13,14 @@ import sample.model.response.UploadDataResponseModel;
 
 import java.io.IOException;
 import java.text.DateFormat;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 @Service
 public class Application {
@@ -179,8 +182,22 @@ public class Application {
         }
     }
 
-    public List<PaymentStatus> getPaymentStatus() {
-        return null;
+    public List<PaymentStatus> getPaymentStatus(String status) throws IOException, ParseException {
+        String result = getPayments();
+        if (result == null) {
+            return new ArrayList<>();
+        }
+        String[] payments = result.split(System.lineSeparator());
+        List<PaymentStatus> paymentStatuses = new ArrayList<>();
+        for (String payment : payments) {
+            PaymentStatus paymentStatus = convertToPaymentStatus(payment);
+            if (paymentStatus != null) {
+                paymentStatuses.add(paymentStatus);
+            }
+        }
+        return paymentStatuses.stream()
+                .filter((paymentStatus -> paymentStatus.getTransactionStatus().equals(status)))
+                .collect(Collectors.toList());
     }
 
     private UploadDataResponseModel uploadNewData(String requestBody) throws IOException {
@@ -266,10 +283,10 @@ public class Application {
         return null;
     }
 
-    public void getPayments() throws IOException {
+    public String getPayments() throws IOException {
         RunTaskResponseModel runTaskResponseModelExport = createTaskToRunSpecificProcessTemplate(null);
         try {
-            TimeUnit.SECONDS.sleep(1);
+            TimeUnit.SECONDS.sleep(3);
         } catch (InterruptedException e) {
             System.out.println(e.getMessage());
         }
@@ -278,7 +295,7 @@ public class Application {
             taskId = runTaskResponseModelExport.getTaskId();
         } else {
             System.out.println("Cannot get payments of the unidentified template");
-            return;
+            return null;
         }
         String url = "/v1/process-templates/" + EXPORT_TEMPLATE_REFERENCE + "/files?taskId=" + taskId;
         OkHttpClient client = new OkHttpClient();
@@ -293,10 +310,67 @@ public class Application {
                 refreshToken();
                 getPayments();
             } else {
-                System.out.println(System.lineSeparator() + response.body().string());
+                return response.body().string();
             }
         } else {
             System.out.println("Request was not successful");
         }
+        return null;
+    }
+
+    private PaymentStatus convertToPaymentStatus(String payment) throws ParseException {
+        if (payment == null || payment.isEmpty()) {
+            return null;
+        }
+        String[] fields = payment.split(";");
+        PaymentStatus paymentStatus = new PaymentStatus();
+        for (int i = 0; i < fields.length; i++) {
+            if (fields[i].isEmpty()) {
+                continue;
+            }
+            switch (i) {
+                case 0:
+                    paymentStatus.setReference(fields[i]);
+                    break;
+                case 1:
+                    paymentStatus.setTransactionType(fields[i]);
+                    break;
+                case 2:
+                    paymentStatus.setDebitingAccount(fields[i]);
+                    break;
+                case 3:
+                    paymentStatus.setTransactionAmount(Long.valueOf(fields[i]));
+                    break;
+                case 4:
+                    paymentStatus.setTransactionCurrency(fields[i]);
+                    break;
+                case 5:
+                    paymentStatus.setTransactionStatus(fields[i]);
+                    break;
+                case 6:
+                    paymentStatus.setRemittanceID(fields[i]);
+                    break;
+                case 7:
+                    paymentStatus.setLastACK(fields[i]);
+                    break;
+                case 8:
+                    break;
+                case 9:
+                    paymentStatus.setRemittanceBankStatus(fields[i]);
+                    break;
+                case 10:
+                    DateFormat dateFormat = new SimpleDateFormat("ddMMyyyy");
+                    paymentStatus.setLastACKDate(dateFormat.parse(fields[i]));
+                    break;
+                case 11:
+                    DateFormat timeFormat = new SimpleDateFormat("HH:mm:ss");
+                    paymentStatus.setLastACKTime(timeFormat.parse(fields[i]));
+                    break;
+                case 12:
+                    paymentStatus.setRejectionInformation(fields[i]);
+                    break;
+            }
+        }
+        return paymentStatus;
     }
 }

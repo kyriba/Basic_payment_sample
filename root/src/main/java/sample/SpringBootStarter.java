@@ -4,8 +4,10 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ConfigurableApplicationContext;
 import sample.model.Payment;
+import sample.model.PaymentStatus;
 
 import java.io.IOException;
+import java.text.ParseException;
 import java.util.*;
 
 @SpringBootApplication
@@ -44,8 +46,11 @@ public class SpringBootStarter {
                     currencyCode));
             System.out.println(app.singlePayment(payment));
             System.out.println(app.bulkPayment(Arrays.asList(payment, payment2, payment3)));
-            app.getPayments();
-        } catch (IOException e) {
+            List<PaymentStatus> paymentStatuses = app.getPaymentStatus("Registered");
+            for (PaymentStatus paymentStatus : paymentStatuses) {
+                System.out.println(paymentStatus);
+            }
+        } catch (IOException | ParseException e) {
             e.printStackTrace();
         }
     }

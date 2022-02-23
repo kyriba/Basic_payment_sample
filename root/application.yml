@@ -11,4 +11,4 @@ base:
 
 templateRef:
   import: DEMO_PY_IMP
-  export: DEMO_PY_EXP
+  export: DEMO_PY_ALL
