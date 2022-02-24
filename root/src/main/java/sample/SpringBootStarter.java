@@ -40,16 +40,36 @@ public class SpringBootStarter {
 
         Application app = context.getBean(Application.class);
         try {
+            Set<String> importedPaymentIDs = new HashSet<>();
             app.refreshToken();
+
             System.out.println(app.singlePayment(paymentID, paymentDueDate, paymentAmount, paymentBAN,
                     disbursementBankAccountNumber, paymentDescription, payeeName, paymentMethod, paymentType,
                     currencyCode));
+            importedPaymentIDs.add(paymentID);
+
             System.out.println(app.singlePayment(payment));
+            importedPaymentIDs.add(payment.getPaymentID());
+
             System.out.println(app.bulkPayment(Arrays.asList(payment, payment2, payment3)));
+            importedPaymentIDs.add(payment.getPaymentID());
+            importedPaymentIDs.add(payment2.getPaymentID());
+            importedPaymentIDs.add(payment3.getPaymentID());
+
+            for (PaymentStatus importedPayment : app.getImportedPayments(importedPaymentIDs)) {
+                System.out.println(importedPayment);
+            }
+
+            for (String transactionStatus : app.getAllAvailableTransactionStatuses()) {
+                System.out.println(transactionStatus);
+            }
+
             List<PaymentStatus> paymentStatuses = app.getPaymentStatus("Registered");
             for (PaymentStatus paymentStatus : paymentStatuses) {
                 System.out.println(paymentStatus);
             }
+
+            System.out.println(app.getPayments());
         } catch (IOException | ParseException e) {
             e.printStackTrace();
         }

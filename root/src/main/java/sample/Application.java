@@ -15,10 +15,7 @@ import java.io.IOException;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -182,7 +179,33 @@ public class Application {
         }
     }
 
+    public List<PaymentStatus> getImportedPayments(Set<String> importedPaymentIDs) throws IOException, ParseException {
+        List<PaymentStatus> paymentStatuses = getAllPaymentStatuses();
+        List<PaymentStatus> importedPayments = new ArrayList<>();
+        for (String importedPaymentID : importedPaymentIDs) {
+            importedPayments.addAll(paymentStatuses.stream()
+                    .filter(paymentStatus -> paymentStatus.getReference().equals(importedPaymentID))
+                    .collect(Collectors.toList()));
+        }
+        return importedPayments;
+    }
+
+    public List<String> getAllAvailableTransactionStatuses() throws ParseException, IOException {
+        List<PaymentStatus> paymentStatuses = getAllPaymentStatuses();
+        return paymentStatuses.stream()
+                .map(PaymentStatus::getTransactionStatus)
+                .distinct()
+                .collect(Collectors.toList());
+    }
+
     public List<PaymentStatus> getPaymentStatus(String status) throws IOException, ParseException {
+        List<PaymentStatus> paymentStatuses = getAllPaymentStatuses();
+        return paymentStatuses.stream()
+                .filter((paymentStatus -> paymentStatus.getTransactionStatus().equals(status)))
+                .collect(Collectors.toList());
+    }
+
+    private List<PaymentStatus> getAllPaymentStatuses() throws IOException, ParseException {
         String result = getPayments();
         if (result == null) {
             return new ArrayList<>();
@@ -195,9 +218,7 @@ public class Application {
                 paymentStatuses.add(paymentStatus);
             }
         }
-        return paymentStatuses.stream()
-                .filter((paymentStatus -> paymentStatus.getTransactionStatus().equals(status)))
-                .collect(Collectors.toList());
+        return paymentStatuses;
     }
 
     private UploadDataResponseModel uploadNewData(String requestBody) throws IOException {
