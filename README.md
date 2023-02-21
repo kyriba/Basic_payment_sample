@@ -7,6 +7,9 @@ Building the API client library requires:
 2. Gradle - [Installation](https://gradle.org/install/)
 3. JRE 1.8 or higher - [Installation](https://java.com/download)
 
+> :warning: *Make sure that Gradle version is compatible with Java [See in docs](https://docs.gradle.org/current/userguide/compatibility.html).*
+>
+
 > :warning: *As you also have JRE installed, you should create a new environment variable for Java and set a new path for the PATH environment to the JDK folder in "Program Files".
 > Guides for creating and setting a new path: 
 > [Windows](https://stackoverflow.com/a/35623142) 
@@ -25,7 +28,7 @@ git clone https://github.com/kyriba/Basic_payment_sample.git
 
 > :warning: *Before building the project, go to .../root/application.yml and update **client.id** and **client.secret** with your credentials used for Get Token method in Postman.*
 
-Then, build the project by running **gradle_clean_build.bat** file for Windows or  **gradle_clean_build.bat** file for
+Then, build the project by running **gradle_clean_build.bat** file for Windows or  **gradle_clean_build.sh** file for
 Unix-like operating systems.
 
 After that, open a Console in the current location folder and launch the application by running jar file:
