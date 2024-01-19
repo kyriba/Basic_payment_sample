@@ -9,12 +9,10 @@ import sample.model.RunTaskResponseModel;
 import sample.model.UploadDataResponseModel;
 
 import java.io.IOException;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.Base64;
-import java.util.Date;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 @Service
 public class Application {
@@ -49,14 +47,14 @@ public class Application {
                 .addHeader("Content-Type", "application/x-www-form-urlencoded")
                 .build();
         Response response = client.newCall(request).execute();
-        if (response != null) {
+        if (response != null && response.isSuccessful()) {
             GetTokenResponseModel getTokenResponseModel =
                     json.deserialize(response.body().string(), GetTokenResponseModel.class);
             accessToken = getTokenResponseModel.getAccessToken();
         } else {
             System.out.println("Cannot get access token. Please, check your credentials and access token url.");
             try {
-                TimeUnit.SECONDS.sleep(3);
+                Thread.sleep(3000);
             } catch (InterruptedException e) {
                 System.out.println(e.getMessage());
             }
@@ -69,11 +67,11 @@ public class Application {
         return Base64.getEncoder().encodeToString(auth.getBytes());
     }
 
-    public void sendPayment(List<String> paymentIDs, List<Date> paymentDueDates, List<Double> paymentAmounts,
-                             List<Long> paymentBANs, List<Long> disbursementBankAccountNumbers,
-                             List<String> paymentDescriptions, List<String> payeeNames, List<String> paymentMethods,
-                             List<String> paymentTypes, List<String> currencyCodes) throws IOException {
-        DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
+    public void sendPayment(List<String> paymentIDs, List<LocalDate> paymentDueDates, List<Double> paymentAmounts,
+                            List<Long> paymentBANs, List<Long> disbursementBankAccountNumbers,
+                            List<String> paymentDescriptions, List<String> payeeNames, List<String> paymentMethods,
+                            List<String> paymentTypes, List<String> currencyCodes) throws IOException {
+        DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("dd/MM/yyyy");
         StringBuilder payload = new StringBuilder();
         for (int i = 0; i < paymentIDs.size(); i++) {
             payload
@@ -91,6 +89,7 @@ public class Application {
                 payload.append(System.lineSeparator());
             }
         }
+        System.out.println(payload);
         UploadDataResponseModel uploadData = uploadNewData(String.valueOf(payload));
         if (uploadData != null) {
             System.out.println(System.lineSeparator() + "New data was successfully uploaded:" +
@@ -157,7 +156,7 @@ public class Application {
 
     public void getStatus() throws IOException {
         try {
-            TimeUnit.SECONDS.sleep(1);
+            Thread.sleep(1000);
         } catch (InterruptedException e) {
             System.out.println(e.getMessage());
         }
@@ -192,7 +191,7 @@ public class Application {
     public void getPayments() throws IOException {
         RunTaskResponseModel runTaskResponseModelExport = createTaskToRunSpecificProcessTemplate(null);
         try {
-            TimeUnit.SECONDS.sleep(1);
+            Thread.sleep(1000);
         } catch (InterruptedException e) {
             System.out.println(e.getMessage());
         }
