@@ -1,21 +1,25 @@
 package sample;
 
-import org.springframework.boot.SpringApplication;
+import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
 import sample.model.Payment;
 import sample.model.PaymentStatus;
 
 import java.io.IOException;
 import java.text.ParseException;
-import java.util.*;
+import java.time.LocalDate;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 @SpringBootApplication
 public class SpringBootStarter {
 
     private static final String paymentID = "CHJ788";
-    private static final Date paymentDueDate =
-            new GregorianCalendar(2022, Calendar.FEBRUARY, 23).getTime();
+    private static final LocalDate paymentDueDate =  LocalDate.now();
     private static final Double paymentAmount = 345000.00D;
     private static final Long paymentBAN = 734567898733L;
     private static final Long disbursementBankAccountNumber = 456787671234L;
@@ -36,7 +40,9 @@ public class SpringBootStarter {
 
 
     public static void main(String[] args) {
-        ConfigurableApplicationContext context = SpringApplication.run(SpringBootStarter.class, args);
+        ConfigurableApplicationContext context = new SpringApplicationBuilder(SpringBootStarter.class)
+                .web(WebApplicationType.NONE)
+                .run(args);
 
         Application app = context.getBean(Application.class);
         try {

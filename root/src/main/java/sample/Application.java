@@ -15,8 +15,12 @@ import java.io.IOException;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.*;
-import java.util.concurrent.TimeUnit;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -52,14 +56,14 @@ public class Application {
                 .addHeader("Content-Type", "application/x-www-form-urlencoded")
                 .build();
         Response response = client.newCall(request).execute();
-        if (response != null) {
+        if (response != null && response.isSuccessful()) {
             GetTokenResponseModel getTokenResponseModel =
                     json.deserialize(response.body().string(), GetTokenResponseModel.class);
             accessToken = getTokenResponseModel.getAccessToken();
         } else {
             System.out.println("Cannot get access token. Please, check your credentials and access token url.");
             try {
-                TimeUnit.SECONDS.sleep(3);
+                Thread.sleep(3000);
             } catch (InterruptedException e) {
                 System.out.println(e.getMessage());
             }
@@ -72,10 +76,10 @@ public class Application {
         return Base64.getEncoder().encodeToString(auth.getBytes());
     }
 
-    public TaskStatus singlePayment(String paymentID, Date paymentDueDate, Double paymentAmount, Long paymentBAN,
+    public TaskStatus singlePayment(String paymentID, LocalDate paymentDueDate, Double paymentAmount, Long paymentBAN,
                                     Long disbursementBankAccountNumber, String paymentDescription, String payeeName,
                                     String paymentMethod, String paymentType, String currencyCode) throws IOException {
-        DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
+        DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("dd/MM/yyyy");
         String payload = paymentID + ',' +
                 dateFormat.format(paymentDueDate) + ',' +
                 paymentAmount + ',' +
@@ -113,7 +117,7 @@ public class Application {
     public TaskStatus singlePayment(Payment payment) throws IOException {
         if (payment != null) {
             String paymentID = payment.getPaymentID();
-            Date paymentDueDate = payment.getPaymentDueDate();
+            LocalDate paymentDueDate = payment.getPaymentDueDate();
             Double paymentAmount = payment.getPaymentAmount();
             Long paymentBAN = payment.getPaymentBAN();
             Long disbursementBankAccountNumber = payment.getDisbursementBankAccountNumber();
@@ -134,7 +138,7 @@ public class Application {
             System.out.println(System.lineSeparator() + "Cannot upload the payment with no data." + System.lineSeparator());
             return new TaskStatus();
         }
-        DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
+        DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("dd/MM/yyyy");
         StringBuilder payload = new StringBuilder();
         for (int i = 0; i < payments.size(); i++) {
             Payment payment = payments.get(i);
@@ -275,7 +279,7 @@ public class Application {
 
     private GetStatusResponseModel getStatus(String taskUuid) throws IOException {
         try {
-            TimeUnit.SECONDS.sleep(1);
+            Thread.sleep(1000);
         } catch (InterruptedException e) {
             System.out.println(e.getMessage());
         }
@@ -307,7 +311,7 @@ public class Application {
     public String getPayments() throws IOException {
         RunTaskResponseModel runTaskResponseModelExport = createTaskToRunSpecificProcessTemplate(null);
         try {
-            TimeUnit.SECONDS.sleep(3);
+            Thread.sleep(3000);
         } catch (InterruptedException e) {
             System.out.println(e.getMessage());
         }

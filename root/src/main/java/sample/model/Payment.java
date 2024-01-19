@@ -1,11 +1,11 @@
 package sample.model;
 
-import java.util.Date;
+import java.time.LocalDate;
 
 public class Payment {
 
     private String paymentID;
-    private Date paymentDueDate;
+    private LocalDate paymentDueDate;
     private Double paymentAmount;
     private Long paymentBAN;
     private Long disbursementBankAccountNumber;
@@ -18,7 +18,7 @@ public class Payment {
     public Payment() {
     }
 
-    public Payment(String paymentID, Date paymentDueDate, Double paymentAmount, Long paymentBAN,
+    public Payment(String paymentID, LocalDate paymentDueDate, Double paymentAmount, Long paymentBAN,
                    Long disbursementBankAccountNumber, String paymentDescription, String payeeName,
                    String paymentMethod, String paymentType, String currencyCode) {
         this.paymentID = paymentID;
@@ -41,11 +41,11 @@ public class Payment {
         this.paymentID = paymentID;
     }
 
-    public Date getPaymentDueDate() {
+    public LocalDate getPaymentDueDate() {
         return paymentDueDate;
     }
 
-    public void setPaymentDueDate(Date paymentDueDate) {
+    public void setPaymentDueDate(LocalDate paymentDueDate) {
         this.paymentDueDate = paymentDueDate;
     }
 
